@@ -1,1 +1,11 @@
+matplotlib
+numpy
+pandas
+seaborn
+scikit-learn
+torch
 streamlit
+mlflow
+joblib==1.1.0
+ipykernel
+tensorboard>=1.15.0
