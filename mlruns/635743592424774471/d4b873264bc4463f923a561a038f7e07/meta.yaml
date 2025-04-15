@@ -1,0 +1,15 @@
+artifact_uri: file:C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\mlruns/635743592424774471/d4b873264bc4463f923a561a038f7e07/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '635743592424774471'
+lifecycle_stage: active
+run_id: d4b873264bc4463f923a561a038f7e07
+run_name: dazzling-duck-710
+run_uuid: d4b873264bc4463f923a561a038f7e07
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1744489487138
+status: 1
+tags: []
+user_id: nnamd

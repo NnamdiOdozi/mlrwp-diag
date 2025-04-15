@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\main2.py", line 183, in <module>
+    st.rerun()
+AttributeError: module 'streamlit' has no attribute 'experimental_rerun'. Did you mean: 'experimental_user'?

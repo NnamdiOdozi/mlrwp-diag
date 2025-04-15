@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\main2.py", line 172, in <module>
+    results = run_diagnostics(
+              ^^^^^^^^^^^^^^^^
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\_DiagnosticCode.py", line 184, in run_diagnostics
+    writer.add_figure('AvsE Train all', fig)
+    ^^^^^^
+NameError: name 'writer' is not defined. Did you mean: 'iter'?

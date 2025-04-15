@@ -1,0 +1,15 @@
+artifact_uri: file:C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\mlruns/635743592424774471/4771eddffbad4e9ca10b5cfbe5d051ff/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '635743592424774471'
+lifecycle_stage: active
+run_id: 4771eddffbad4e9ca10b5cfbe5d051ff
+run_name: charming-bug-276
+run_uuid: 4771eddffbad4e9ca10b5cfbe5d051ff
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1744488811047
+status: 1
+tags: []
+user_id: nnamd

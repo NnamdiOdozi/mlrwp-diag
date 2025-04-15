@@ -1,0 +1,15 @@
+artifact_uri: file:C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\mlruns/635743592424774471/c746a9fe3b4847ee9d6fe8c7e1a26a7f/artifacts
+end_time: 1744497158825
+entry_point_name: ''
+experiment_id: '635743592424774471'
+lifecycle_stage: active
+run_id: c746a9fe3b4847ee9d6fe8c7e1a26a7f
+run_name: reserving_diag_20250412_232830
+run_uuid: c746a9fe3b4847ee9d6fe8c7e1a26a7f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1744496910955
+status: 4
+tags: []
+user_id: nnamd
