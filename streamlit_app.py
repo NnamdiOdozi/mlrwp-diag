@@ -91,17 +91,9 @@ st.title("Machine Learning in Reserving - Diagnostic App")
 # CHANGED: Dynamic hostname detection for MLflow link
 # Get server hostname/IP for MLflow link
 hostname = socket.gethostname()
-try:
-    # Try to get the IP address
-    ip_address = socket.gethostbyname(hostname)
-    # For localhost development, use localhost
-    if ip_address.startswith("127."):
-        mlflow_url = "http://localhost:5000"
-    else:
-        mlflow_url = f"http://{ip_address}:5000"
-except:
-    # Fallback to using the same host as Streamlit
-    mlflow_url = "http://" + socket.getfqdn() + ":5000"
+vps_public_ip = "138.199.200.113"  # Replace with your actual VPS IP address
+is_local = socket.gethostname() == "localhost" or socket.gethostname().startswith("Nnamdi") or socket.gethostname().startswith("LAPTOP-")
+mlflow_url = f"http://localhost:5000" if is_local else f"http://{vps_public_ip}:5000"
 
 # Add a clickable link to the MLflow UI at the top of your app
 # CHANGED: Use dynamic mlflow_url instead of hardcoded localhost

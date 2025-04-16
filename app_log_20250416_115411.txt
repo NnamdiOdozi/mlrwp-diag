@@ -1,1 +1,2 @@
 2025-04-16 11:54:40,843 - INFO - MLflow UI started on all interfaces (0.0.0.0:5000)
+2025-04-16 11:54:42,845 - INFO - MLflow UI started successfully
