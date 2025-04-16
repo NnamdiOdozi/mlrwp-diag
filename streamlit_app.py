@@ -63,9 +63,11 @@ def start_mlflow_ui():
     mlflow.set_tracking_uri(f"file:{mlruns_dir}")
     
     # Start MLflow UI in a subprocess
-    subprocess.Popen(["mlflow", "ui"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logging.info("MLflow UI started on http://localhost:5000")
-    print("MLflow UI started on http://localhost:5000")
+    # CHANGED: Added --host 0.0.0.0 to bind to all interfaces
+    subprocess.Popen(["mlflow", "ui", "--host", "0.0.0.0"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # CHANGED: Updated log message to reflect all interfaces
+    logging.info("MLflow UI started on all interfaces (0.0.0.0:5000)")
+    print("MLflow UI started on all interfaces (0.0.0.0:5000)")
 
 # Check if MLflow UI is running, start it if not
 if not is_mlflow_ui_running():
@@ -86,9 +88,25 @@ else:
 st.set_page_config(layout="wide")
 st.title("Machine Learning in Reserving - Diagnostic App")
 
+# CHANGED: Dynamic hostname detection for MLflow link
+# Get server hostname/IP for MLflow link
+hostname = socket.gethostname()
+try:
+    # Try to get the IP address
+    ip_address = socket.gethostbyname(hostname)
+    # For localhost development, use localhost
+    if ip_address.startswith("127."):
+        mlflow_url = "http://localhost:5000"
+    else:
+        mlflow_url = f"http://{ip_address}:5000"
+except:
+    # Fallback to using the same host as Streamlit
+    mlflow_url = "http://" + socket.getfqdn() + ":5000"
+
 # Add a clickable link to the MLflow UI at the top of your app
-st.markdown("""
-### [📊 Open MLflow Dashboard](http://localhost:5000)
+# CHANGED: Use dynamic mlflow_url instead of hardcoded localhost
+st.markdown(f"""
+### [📊 Open MLflow Dashboard]({mlflow_url})
 Click the link above to open the MLflow tracking dashboard in a new tab.
 """, unsafe_allow_html=True)
 
@@ -199,13 +217,9 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                         client = mlflow.tracking.MlflowClient()
                         experiment = client.get_experiment_by_name(experiment_name)
                         exp_id = experiment.experiment_id
-                        try: # Attempt to get host IP
-                            import socket
-                            host_ip = socket.gethostbyname(socket.gethostname())
-                            mlflow_ui_url = f"http://{host_ip}:5000/#/experiments/{exp_id}/runs/{run_id}"
-                        except:
-                             mlflow_ui_url = f"http://localhost:5000/#/experiments/{exp_id}/runs/{run_id}" # Fallback
-                        status.markdown(f"[View MLflow Run]({mlflow_ui_url}) (Requires `mlflow ui` running)", unsafe_allow_html=True)
+                        # CHANGED: Use the same mlflow_url from above instead of trying to detect again
+                        mlflow_ui_url = f"{mlflow_url}/#/experiments/{exp_id}/runs/{run_id}"
+                        status.markdown(f"[View MLflow Run]({mlflow_ui_url})", unsafe_allow_html=True)
                     except Exception:
                         status.warning("Could not generate MLflow UI link. Run `mlflow ui` manually.")
                         logging.warning("Could not generate MLflow UI link.")
@@ -373,4 +387,5 @@ elif data is None:
 # Footer instructions (updated)
 st.sidebar.markdown("---")
 st.sidebar.markdown("To view detailed logs:")
-st.sidebar.markdown("1. **MLflow:** Click the [📊 Open MLflow Dashboard](http://localhost:5000) link at the top of this page.")
+# CHANGED: Update the footer link to use the dynamic mlflow_url
+st.sidebar.markdown(f"1. **MLflow:** Click the [📊 Open MLflow Dashboard]({mlflow_url}) link at the top of this page.")
