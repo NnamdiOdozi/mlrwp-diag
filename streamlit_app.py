@@ -1,5 +1,5 @@
 """
-main2.py (Modified - No Streaming RMSE)
+streamlit_app.py (Modified - No Streaming RMSE)
 
 Streamlit front-end for the Machine Learning in Reserving - Diagnostic App.
 - Collects hyperparameters and run information from the user.
@@ -23,6 +23,13 @@ import subprocess
 import threading
 import socket
 import psutil
+
+# Add logging with minimal changes
+import logging
+from datetime import datetime
+log_filename = f"app_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+logging.basicConfig(filename=log_filename, level=logging.INFO, 
+                   format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Ensure the path is correct for importing local modules
 import sys
@@ -57,6 +64,7 @@ def start_mlflow_ui():
     
     # Start MLflow UI in a subprocess
     subprocess.Popen(["mlflow", "ui"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logging.info("MLflow UI started on http://localhost:5000")
     print("MLflow UI started on http://localhost:5000")
 
 # Check if MLflow UI is running, start it if not
@@ -65,10 +73,13 @@ if not is_mlflow_ui_running():
         start_mlflow_ui()
         # Wait a moment for the server to start
         time.sleep(2)
+        logging.info("MLflow UI started successfully")
         print("MLflow UI started successfully")
     except Exception as e:
+        logging.error(f"Failed to start MLflow UI: {e}")
         print(f"Failed to start MLflow UI: {e}")
 else:
+    logging.info("MLflow UI is already running")
     print("MLflow UI is already running")
 
 # --- Streamlit Page Setup ---
@@ -177,10 +188,12 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                 experiment_name = "MLRWP_Reserving_Diagnostics"
                 mlflow.set_experiment(experiment_name)
                 status.write(f"Starting MLflow run: '{run_name}' under experiment: '{experiment_name}'")
+                logging.info(f"Starting MLflow run: '{run_name}' under experiment: '{experiment_name}'")
 
                 with mlflow.start_run(run_name=run_name) as run:
                     run_id = run.info.run_id
                     status.write(f"MLflow Run ID: {run_id}")
+                    logging.info(f"MLflow Run ID: {run_id}")
                     # (MLflow UI link generation - improved)
                     try:
                         client = mlflow.tracking.MlflowClient()
@@ -195,6 +208,7 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                         status.markdown(f"[View MLflow Run]({mlflow_ui_url}) (Requires `mlflow ui` running)", unsafe_allow_html=True)
                     except Exception:
                         status.warning("Could not generate MLflow UI link. Run `mlflow ui` manually.")
+                        logging.warning("Could not generate MLflow UI link.")
 
                     mlflow.log_params({
                         "nn_iter": nn_iter, "max_lr": max_lr, "init_bias": init_bias,
@@ -205,6 +219,7 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     mlflow.log_param("training_rows", data[data['train_ind'] == 1].shape[0])
 
                     status.write("Training model and generating diagnostics...")
+                    logging.info("Training model and generating diagnostics...")
                     start_time = time.time()
 
                     # Run Diagnostics call (No callback needed now)
@@ -215,6 +230,7 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     )
                     duration = time.time() - start_time
                     status.write(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
+                    logging.info(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
 
                     # Store results and figures in session state
                     st.session_state.results = results # Store final results dict
@@ -233,10 +249,12 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                             status.write("Cleared previous output figures.")
                         except Exception as e:
                              status.warning(f"Could not clear output directory '{output_dir}': {e}")
+                             logging.warning(f"Could not clear output directory '{output_dir}': {e}")
                     try:
                         os.makedirs(output_dir, exist_ok=True) # Recreate it
                     except Exception as e:
                         status.error(f"Could not create output directory '{output_dir}': {e}")
+                        logging.error(f"Could not create output directory '{output_dir}': {e}")
 
                     # Log metrics/artifacts
                     mlflow.log_metric("mse_train", results.get("mse", float('nan')))
@@ -254,11 +272,15 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                                  logged_plots_count += 1
                              except Exception as e:
                                  status.warning(f"Could not save/log figure '{name}': {e}")
+                                 logging.warning(f"Could not save/log figure '{name}': {e}")
                          status.write(f"Logged {logged_plots_count} plots.")
+                         logging.info(f"Logged {logged_plots_count} plots.")
                     else:
                          status.warning("No figures were generated by the diagnostics run.")
+                         logging.warning("No figures were generated by the diagnostics run.")
 
                     status.update(label="Diagnostic run completed successfully!", state="complete", expanded=False)
+                    logging.info("Diagnostic run completed successfully!")
                     st.rerun() # Rerun to update the main display area
 
             except Exception as e:
@@ -269,10 +291,13 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     mlflow.end_run(status="FAILED")
                 except Exception as mlflow_e:
                      print(f"Error trying to fail MLflow run: {mlflow_e}") # Log to console
+                     logging.error(f"Error trying to fail MLflow run: {mlflow_e}")
 
                 status.update(label="Diagnostic run failed!", state="error", expanded=True)
                 status.error("An error occurred during the diagnostic run:")
                 status.exception(e)
+                logging.error(f"Diagnostic run failed: {str(e)}")
+                logging.error(traceback.format_exc())
                 # Clear potentially partial results and figures
                 st.session_state.results = None
                 st.session_state.current_run_figures = []
