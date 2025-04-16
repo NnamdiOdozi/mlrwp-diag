@@ -11,3 +11,4 @@ tensorboard>=1.15.0
 #scikit-learn >1.1.3
 scikit-learn>=1.3.0,<1.7.0
 joblib>=1.2.0,<1.4.0
+psutil>=5.9.0

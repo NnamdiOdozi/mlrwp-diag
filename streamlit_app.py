@@ -19,16 +19,67 @@ import time
 import numpy as np # Import numpy for checking numeric types
 import shutil # Import shutil for directory removal
 
+import subprocess
+import threading
+import socket
+import psutil
+
 # Ensure the path is correct for importing local modules
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Corrected import to match user's file name
 from _DiagnosticCode2 import run_diagnostics
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Function to check if MLflow UI is already running
+def is_mlflow_ui_running():
+    for process in psutil.process_iter(['pid', 'name', 'cmdline']):
+        if process.info['cmdline'] and len(process.info['cmdline']) > 1:
+            cmdline = ' '.join(process.info['cmdline'])
+            if 'mlflow ui' in cmdline:
+                return True
+    
+    # Also check if port 5000 is in use
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex(('localhost', 5000))
+    sock.close()
+    return result == 0
+
+# Function to start MLflow UI in a separate thread
+def start_mlflow_ui():
+    # Set the tracking URI first to ensure MLflow uses the right directory
+    mlruns_dir = os.path.abspath("./mlruns")
+    if not os.path.exists(mlruns_dir):
+        os.makedirs(mlruns_dir)
+    
+    mlflow.set_tracking_uri(f"file:{mlruns_dir}")
+    
+    # Start MLflow UI in a subprocess
+    subprocess.Popen(["mlflow", "ui"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print("MLflow UI started on http://localhost:5000")
+
+# Check if MLflow UI is running, start it if not
+if not is_mlflow_ui_running():
+    try:
+        start_mlflow_ui()
+        # Wait a moment for the server to start
+        time.sleep(2)
+        print("MLflow UI started successfully")
+    except Exception as e:
+        print(f"Failed to start MLflow UI: {e}")
+else:
+    print("MLflow UI is already running")
+
 # --- Streamlit Page Setup ---
 st.set_page_config(layout="wide")
 st.title("Machine Learning in Reserving - Diagnostic App")
+
+# Add a clickable link to the MLflow UI at the top of your app
+st.markdown("""
+### [📊 Open MLflow Dashboard](http://localhost:5000)
+Click the link above to open the MLflow tracking dashboard in a new tab.
+""", unsafe_allow_html=True)
 
 # --- User Input: Hyperparameters & Run Name ---
 st.sidebar.header("Model Configuration")
@@ -294,7 +345,7 @@ elif data is None:
     st.warning("Load data successfully before running the model.")
 
 
-# Footer instructions (remains the same)
+# Footer instructions (updated)
 st.sidebar.markdown("---")
 st.sidebar.markdown("To view detailed logs:")
-st.sidebar.markdown("1. **MLflow:** Run `mlflow ui` in your terminal (in this project's directory) and open the provided link.")
+st.sidebar.markdown("1. **MLflow:** Click the [📊 Open MLflow Dashboard](http://localhost:5000) link at the top of this page.")
