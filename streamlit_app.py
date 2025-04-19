@@ -19,10 +19,15 @@ import time
 import numpy as np # Import numpy for checking numeric types
 import shutil # Import shutil for directory removal
 
+import requests
 import subprocess
 import threading
 import socket
 import psutil
+
+# Add timezone support for showing local time
+from datetime import datetime, timezone
+import pytz  # Will need to be added to requirements.txt
 
 # Add logging with minimal changes
 import logging
@@ -38,6 +43,12 @@ import sys
 from _DiagnosticCode2 import run_diagnostics
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Function to get formatted local time in a specific timezone
+def get_formatted_local_time(tz_name='US/Eastern'):
+    utc_time = datetime.now(timezone.utc)
+    local_time = utc_time.astimezone(pytz.timezone(tz_name))
+    return local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
 
 # Function to check if MLflow UI is already running
 def is_mlflow_ui_running():
@@ -69,6 +80,16 @@ def start_mlflow_ui():
     logging.info("MLflow UI started on all interfaces (0.0.0.0:5000)")
     print("MLflow UI started on all interfaces (0.0.0.0:5000)")
 
+#Function to get the client's IP address
+def get_client_ip():
+    try:
+        response = requests.get('https://api.ipify.org?format=json', timeout=3)
+        if response.status_code == 200:
+            return response.json()['ip']
+    except:
+        pass
+    return "Unknown"
+
 # Check if MLflow UI is running, start it if not
 if not is_mlflow_ui_running():
     try:
@@ -88,8 +109,11 @@ else:
 st.set_page_config(layout="wide")
 st.title("Machine Learning in Reserving - Diagnostic App")
 
+# Display local time
+st.write(f"Local time: {get_formatted_local_time()}")
+
 # CHANGED: Dynamic hostname detection for MLflow link
-# Get server hostname/IP for MLflow link
+# Get server hostname/IP for MLflow link. These variable should really be in a config file.
 hostname = socket.gethostname()
 vps_public_ip = "138.199.200.113"  # Replace with your actual VPS IP address
 is_local = socket.gethostname() == "localhost" or socket.gethostname().startswith("Nnamdi") or socket.gethostname().startswith("LAPTOP-")
@@ -190,6 +214,10 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
     if data is not None:
         with st.status("Starting diagnostic run...", expanded=True) as status:
             try:
+                # Get user IP for logging
+                user_ip = get_client_ip()
+                logging.info(f"User IP: {user_ip}")
+                
                 # MLflow Setup
                 mlruns_dir = os.path.abspath("./mlruns")
                 if not os.path.exists(mlruns_dir):
@@ -204,6 +232,15 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     run_id = run.info.run_id
                     status.write(f"MLflow Run ID: {run_id}")
                     logging.info(f"MLflow Run ID: {run_id}")
+                    
+                    # Set model name, dataset, and user tags
+                    mlflow.set_tag("mlflow.runName", run_name)
+                    mlflow.set_tag("model_name", "Diagnostic")
+                    mlflow.set_tag("dataset", "Diagnostic")
+                    if user_name:
+                        mlflow.set_tag("user_name", user_name)
+                    mlflow.log_param("user_ip", user_ip)
+                    
                     # (MLflow UI link generation - improved)
                     try:
                         client = mlflow.tracking.MlflowClient()
@@ -238,6 +275,16 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     status.write(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
                     logging.info(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
 
+                    # Display model training summary
+                    status.write("### Model Training Summary")
+                    status.write(f"- **Number of Epochs**: {nn_iter}")
+                    status.write(f"- **Learning Rate**: {max_lr}")
+                    status.write(f"- **Hidden Nodes**: {n_hidden}")
+                    status.write(f"- **Initial Bias**: {init_bias}")
+                    status.write(f"- **Batch Normalization**: {'Enabled' if batchnorm else 'Disabled'}")
+                    status.write(f"- **Dropout Rate**: {dropout_rate}")
+                    status.write(f"- **Final MSE**: {results.get('mse', 'N/A'):.2f}")
+
                     # Store results and figures in session state
                     st.session_state.results = results # Store final results dict
                     st.session_state.current_run_figures = results.get("figures", []) # Store [(name, fig)] list
@@ -269,12 +316,17 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     logged_plots_count = 0
                     if st.session_state.current_run_figures:
                          status.write(f"Logging {len(st.session_state.current_run_figures)} plots to MLflow artifacts...")
+                         
+                         # Save to a temporary directory with relative paths
+                         figures_dir = "figures"
+                         os.makedirs(figures_dir, exist_ok=True)
+                         
                          for name, fig in st.session_state.current_run_figures:
                              safe_name = "".join(c if c.isalnum() else "_" for c in name).strip("_")
-                             path = os.path.join(output_dir, f"{safe_name}_{run_id[:8]}.png")
+                             rel_path = os.path.join(figures_dir, f"{safe_name}_{run_id[:8]}.png")
                              try:
-                                 fig.savefig(path, bbox_inches='tight')
-                                 mlflow.log_artifact(path, artifact_path="figures")
+                                 fig.savefig(rel_path, bbox_inches='tight')
+                                 mlflow.log_artifact(rel_path, artifact_path="figures")
                                  logged_plots_count += 1
                              except Exception as e:
                                  status.warning(f"Could not save/log figure '{name}': {e}")
@@ -323,6 +375,19 @@ if st.session_state.results:
          formatted_mse = "N/A"
     st.metric(label="Final MSE (Training Set)", value=formatted_mse)
     st.markdown("---") # Add separator after metric
+
+    # Display model parameters summary in results area
+    st.subheader("Model Parameters")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"**Number of Epochs**: {nn_iter}")
+        st.write(f"**Learning Rate**: {max_lr}")
+        st.write(f"**Initial Bias**: {init_bias}")
+    with col2:
+        st.write(f"**Hidden Nodes**: {n_hidden}")
+        st.write(f"**Batch Normalization**: {'Enabled' if batchnorm else 'Disabled'}")
+        st.write(f"**Dropout Rate**: {dropout_rate}")
+    st.markdown("---") # Add separator after parameters
 
     # --- Display Plots (Revised for full-width - Change #3) ---
     st.subheader("Diagnostic Plots")

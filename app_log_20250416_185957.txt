@@ -1,0 +1,25 @@
+2025-04-16 19:00:41,854 - INFO - MLflow UI started on all interfaces (0.0.0.0:5000)
+2025-04-16 19:00:43,867 - INFO - MLflow UI started successfully
+2025-04-16 19:01:09,481 - INFO - MLflow UI is already running
+2025-04-16 19:01:09,731 - INFO - User IP: 2.58.73.52
+2025-04-16 19:01:09,766 - INFO - Starting MLflow run: 'reserving_diag_20250416_190109' under experiment: 'MLRWP_Reserving_Diagnostics'
+2025-04-16 19:01:11,417 - INFO - MLflow Run ID: 53bb141059ec43ed9d6330bc6b921f2f
+2025-04-16 19:01:11,561 - INFO - Training model and generating diagnostics...
+2025-04-16 19:02:13,261 - INFO - Run diagnostics processing complete! (Duration: 61.70s)
+2025-04-16 19:02:13,305 - WARNING - Could not clear output directory 'C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\outputs\figures': [WinError 5] Access is denied: 'C:\\Users\\nnamd\\OneDrive\\Python_learning\\MLIR Coding\\mlrwp-diag\\outputs\\figures'
+2025-04-16 19:02:19,896 - INFO - Logged 9 plots.
+2025-04-16 19:02:19,896 - INFO - Diagnostic run completed successfully!
+2025-04-16 19:02:21,169 - INFO - MLflow UI is already running
+2025-04-16 21:30:28,449 - INFO - MLflow UI is already running
+2025-04-17 07:53:48,697 - INFO - MLflow UI is already running
+2025-04-17 07:54:27,683 - INFO - MLflow UI is already running
+2025-04-17 07:54:30,317 - INFO - MLflow UI is already running
+2025-04-17 07:54:30,818 - INFO - User IP: 103.214.46.197
+2025-04-17 07:54:30,881 - INFO - Starting MLflow run: 'reserving_diag_20250417_075430' under experiment: 'MLRWP_Reserving_Diagnostics'
+2025-04-17 07:54:31,345 - INFO - MLflow Run ID: 3709442d3f8d4445bf3407e4dcf6d5f0
+2025-04-17 07:54:31,696 - INFO - Training model and generating diagnostics...
+2025-04-17 07:55:46,690 - INFO - Run diagnostics processing complete! (Duration: 74.99s)
+2025-04-17 07:55:46,722 - WARNING - Could not clear output directory 'C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\outputs\figures': [WinError 5] Access is denied: 'C:\\Users\\nnamd\\OneDrive\\Python_learning\\MLIR Coding\\mlrwp-diag\\outputs\\figures'
+2025-04-17 07:55:57,344 - INFO - Logged 9 plots.
+2025-04-17 07:55:57,346 - INFO - Diagnostic run completed successfully!
+2025-04-17 07:56:00,262 - INFO - MLflow UI is already running
