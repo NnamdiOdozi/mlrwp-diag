@@ -1,0 +1,14 @@
+2025-04-28 07:58:08,842 - INFO - MLflow UI started on all interfaces (0.0.0.0:5000)
+2025-04-28 07:58:10,843 - INFO - MLflow UI started successfully
+2025-04-28 07:58:38,722 - INFO - MLflow UI is already running
+2025-04-28 07:58:42,325 - INFO - MLflow UI is already running
+2025-04-28 07:58:53,862 - INFO - MLflow UI is already running
+2025-04-28 07:58:54,123 - INFO - User IP: 91.196.221.105
+2025-04-28 07:58:54,174 - INFO - Starting MLflow run: 'reserving_diag_20250428_075853' under experiment: 'MLRWP_Reserving_Diagnostics'
+2025-04-28 07:58:57,808 - INFO - MLflow Run ID: e9bbbcb1ab314ffa9f743b96edc29410
+2025-04-28 07:58:58,210 - INFO - Training model and generating diagnostics...
+2025-04-28 07:59:33,407 - INFO - Run diagnostics processing complete! (Duration: 35.20s)
+2025-04-28 07:59:33,463 - WARNING - Could not clear output directory 'C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\outputs\figures': [WinError 5] Access is denied: 'C:\\Users\\nnamd\\OneDrive\\Python_learning\\MLIR Coding\\mlrwp-diag\\outputs\\figures'
+2025-04-28 07:59:42,412 - INFO - Logged 9 plots.
+2025-04-28 07:59:42,414 - INFO - Diagnostic run completed successfully!
+2025-04-28 07:59:47,348 - INFO - MLflow UI is already running

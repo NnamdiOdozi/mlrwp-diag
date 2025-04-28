@@ -275,6 +275,18 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     status.write(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
                     logging.info(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
 
+                    # Check if model exists in results and log it
+                    if 'model' in results:
+                        # Log the actual model
+                        mlflow.pytorch.log_model(results['model'], "model")
+                        
+                        # Register the model (optional)
+                        model_uri = f"runs:/{run_id}/model"
+                        mlflow.register_model(model_uri, "Diagnostic")
+                    
+                    # Also explicitly log dataset as a param rather than just a tag
+                    mlflow.log_param("dataset", "Diagnostic")
+
                     # Display model training summary
                     status.write("### Model Training Summary")
                     status.write(f"- **Number of Epochs**: {nn_iter}")
