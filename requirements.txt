@@ -1,10 +1,13 @@
+
+--index-url https://download.pytorch.org/whl/cpu
+torch
+
 matplotlib
 numpy
 pandas
 seaborn
 #scikit-learn
 #torch
-torch --index-url https://download.pytorch.org/whl/cpu
 streamlit
 mlflow
 #joblib==1.1.0
