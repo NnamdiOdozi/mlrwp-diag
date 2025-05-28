@@ -1,18 +1,17 @@
 
+# CPU-only PyTorch from special index
 --index-url https://download.pytorch.org/whl/cpu
 torch
 
+# Switch back to default PyPI for other packages
+--index-url https://pypi.org/simple/
 matplotlib
 numpy
 pandas
 seaborn
-#scikit-learn
-#torch
 streamlit
 mlflow
-#joblib==1.1.0
 tensorboard>=1.15.0
-#scikit-learn >1.1.3
 scikit-learn>=1.3.0,<1.7.0
 joblib>=1.2.0,<1.4.0
 psutil>=5.9.0
