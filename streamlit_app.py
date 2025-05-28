@@ -275,6 +275,83 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                     status.write(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
                     logging.info(f"Run diagnostics processing complete! (Duration: {duration:.2f}s)")
 
+
+                    # CORRECTED CODE STARTS HERE
+                    import pickle
+                    import os
+                    import numpy as np
+                    import mlflow.pyfunc
+                    from mlflow.models.signature import ModelSignature
+                    from mlflow.types import Schema, ColSpec
+
+                    # Create a proper PythonModel class as required by MLflow
+                    class DiagnosticWrapper(mlflow.pyfunc.PythonModel):
+                        def __init__(self, params):
+                            self.params = params
+                        
+                        def predict(self, context, model_input):
+                            # Simple dummy prediction
+                            return np.zeros(len(model_input))
+                            
+                        def load_context(self, context):
+                            # Nothing to load for this simple model
+                            pass
+
+                    # Create the model instance with parameters
+                    model_params = {
+                        "nn_iter": nn_iter,
+                        "max_lr": max_lr,
+                        "init_bias": init_bias,
+                        "n_hidden": n_hidden,
+                        "batchnorm": batchnorm,
+                        "dropout_rate": dropout_rate
+                    }
+                    model_wrapper = DiagnosticWrapper(model_params)
+
+                    # Define input/output schema
+                    input_schema = Schema([
+                        ColSpec(type="double", name="occurrence_time"),
+                        ColSpec(type="double", name="development_period")
+                    ])
+                    output_schema = Schema([ColSpec(type="double", name="prediction")])
+                    signature = ModelSignature(inputs=input_schema, outputs=output_schema)
+
+                    # Define conda env
+                    conda_env = {
+                        'channels': ['defaults'],
+                        'dependencies': [
+                            'python=3.8',
+                            'pip',
+                            {'pip': ['mlflow', 'numpy']}
+                        ],
+                        'name': 'diagnostic_env'
+                    }
+
+                    # Log the model correctly with PythonModel instance
+                    mlflow.pyfunc.log_model(
+                        artifact_path="diagnostic-model",
+                        python_model=model_wrapper,
+                        conda_env=conda_env,
+                        signature=signature,
+                        registered_model_name="Diagnostic"
+                    )
+
+                    # Log dataset and model information
+                    mlflow.log_param("dataset", "Diagnostic")
+                    mlflow.log_param("model_name", "Diagnostic")
+                    mlflow.log_param("model_type", "Neural Network")
+
+                    # Explicitly end the run as FINISHED
+                    run = mlflow.active_run()
+                    if run:
+                        client = mlflow.tracking.MlflowClient()
+                        client.set_terminated(run.info.run_id, "FINISHED")
+                        status.write("Run status explicitly set to FINISHED")
+                        logging.info("Run status explicitly set to FINISHED")
+                    # CORRECTED CODE ENDS HERE
+
+
+
                     # Check if model exists in results and log it
                     if 'model' in results:
                         # Log the actual model

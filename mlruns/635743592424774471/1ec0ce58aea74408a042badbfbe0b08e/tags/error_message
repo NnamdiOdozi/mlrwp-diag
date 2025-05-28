@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\streamlit_app.py", line 339, in <module>
+    mlflow.pyfunc.log_model(
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\diagenv\Lib\site-packages\mlflow\tracing\provider.py", line 422, in wrapper
+    is_func_called, result = True, f(*args, **kwargs)
+                                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\diagenv\Lib\site-packages\mlflow\pyfunc\__init__.py", line 3522, in log_model
+    return Model.log(
+           ^^^^^^^^^^
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\diagenv\Lib\site-packages\mlflow\models\model.py", line 855, in log
+    flavor.save_model(path=local_path, mlflow_model=mlflow_model, **kwargs)
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\diagenv\Lib\site-packages\mlflow\tracing\provider.py", line 426, in wrapper
+    is_func_called, result = True, f(*args, **kwargs)
+                                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\diagenv\Lib\site-packages\mlflow\pyfunc\__init__.py", line 2975, in save_model
+    _validate_function_python_model(python_model)
+  File "C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\mlrwp-diag\diagenv\Lib\site-packages\mlflow\pyfunc\__init__.py", line 2734, in _validate_function_python_model
+    raise MlflowException(
+mlflow.exceptions.MlflowException: `python_model` must be a PythonModel instance, callable object, or path to a script that uses set_model() to set a PythonModel instance or callable object.

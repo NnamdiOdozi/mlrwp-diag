@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1745825198393
+current_stage: None
+description: null
+last_updated_timestamp: 1745825198393
+name: Diagnostic
+run_id: 94fcd45f707c48e0b17f2dc3dd11b22d
+run_link: null
+source: file:C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\mlruns/635743592424774471/94fcd45f707c48e0b17f2dc3dd11b22d/artifacts/diagnostic-model
+status: READY
+status_message: null
+storage_location: file:C:\Users\nnamd\OneDrive\Python_learning\MLIR Coding\Diagnostic\mlruns/635743592424774471/94fcd45f707c48e0b17f2dc3dd11b22d/artifacts/diagnostic-model
+user_id: null
+version: 1
