@@ -18,7 +18,6 @@ import logging
 from datetime import datetime
 import pytz
 from streamlit.components.v1 import html
-from torch.utils.tensorboard import SummaryWriter  
 
 # Setup basic logging
 log_filename = f"app_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
@@ -39,7 +38,61 @@ def get_formatted_local_time():
     local_time = datetime.now(pytz.timezone('Europe/London'))
     return local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
 
-# Improved TensorBoard process management
+# Improved function to check if running on local machine
+def is_running_locally():
+    hostname = socket.gethostname()
+    # Check if hostname contains common local machine identifiers
+    return (hostname == "localhost" or 
+            hostname.startswith("Nnamdi") or 
+            hostname.startswith("LAPTOP-") or
+            hostname.lower().startswith("desktop-"))
+
+# Function to get the server's IP address or hostname
+def get_server_address():
+    """Get the appropriate server address for TensorBoard"""
+    # If running locally, use localhost
+    if is_running_locally():
+        return "localhost"
+    
+    # For remote servers, try different approaches to get the actual server address
+    try:
+        # Try to get the server's IP that's exposed to the internet
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Doesn't need to be reachable, just used to get local IP
+        s.connect(('8.8.8.8', 1))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except:
+        pass
+    
+    # If that fails, try using the hostname
+    try:
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        return ip
+    except:
+        pass
+    
+    # If all else fails, check if Streamlit gives us the external URL
+    try:
+        external_url = st.get_option('server.headless') and st.get_option('server.address')
+        if external_url and external_url != 'localhost':
+            return external_url
+    except:
+        pass
+    
+    # Last resort - return localhost, but log the issue
+    logging.warning("Could not determine server address, using localhost as fallback")
+    return "localhost"
+
+# Function to get the TensorBoard URL
+def get_tensorboard_url():
+    """Get the appropriate TensorBoard URL based on environment"""
+    server_address = get_server_address()
+    return f"http://{server_address}:{TENSORBOARD_PORT}"
+
+# Function to check if TensorBoard is already running
 def find_tensorboard_process():
     """Find an existing TensorBoard process"""
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
@@ -72,11 +125,14 @@ def start_tensorboard():
     # Ensure log directory exists
     os.makedirs(TENSORBOARD_LOGDIR, exist_ok=True)
     
-    # Start TensorBoard process
+    # Start TensorBoard process with faster refresh rate
     try:
-        # Use shell=False for better security and process management
         process = subprocess.Popen(
-            ["tensorboard", "--logdir", TENSORBOARD_LOGDIR, "--port", str(TENSORBOARD_PORT)],
+            ["tensorboard", "--logdir", TENSORBOARD_LOGDIR, 
+             "--port", str(TENSORBOARD_PORT),
+             "--bind_all",  # Bind to all interfaces
+             "--reload_interval", "0.5",  # Reload every 0.5 seconds
+             "--reload_multifile", "true"],  # Enable faster reloading
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
@@ -163,6 +219,8 @@ if 'current_run_figures' not in st.session_state:
     st.session_state.current_run_figures = []
 if 'selected_figures' not in st.session_state:
     st.session_state.selected_figures = []
+if 'training_active' not in st.session_state:
+    st.session_state.training_active = False
 
 # Plot selection
 st.sidebar.subheader("Diagnostic Plots")
@@ -185,11 +243,21 @@ if not figure_options and data is not None:
 elif data is None:
     st.sidebar.warning("Load data to enable model run.")
 
+# Auto-refresh during active training
+if st.session_state.training_active:
+    st.markdown("""
+    <meta http-equiv="refresh" content="5">
+    """, unsafe_allow_html=True)
+    st.info("Auto-refresh is active during training (every 5 seconds)")
+
 # Run model button
 if st.button("Train Model and Generate Diagnostics", disabled=(data is None), type="primary"):
     if data is not None:
         with st.status("Starting diagnostic run...", expanded=True) as status:
             try:
+                # Set training active flag
+                st.session_state.training_active = True
+                
                 # Ensure directories exist
                 os.makedirs(TENSORBOARD_LOGDIR, exist_ok=True)
                 output_dir = os.path.abspath("outputs/figures")
@@ -242,10 +310,16 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                             status.warning(f"Could not save figure '{name}': {e}")
                     status.write(f"Saved {saved_count} plots to {output_dir}")
                 
+                # Set training inactive flag
+                st.session_state.training_active = False
+                
                 status.update(label="Diagnostic run completed!", state="complete", expanded=False)
                 st.rerun()
 
             except Exception as e:
+                # Set training inactive flag
+                st.session_state.training_active = False
+                
                 status.update(label="Diagnostic run failed!", state="error", expanded=True)
                 status.error("An error occurred during the run:")
                 status.exception(e)
@@ -261,12 +335,18 @@ tab1, tab2 = st.tabs(["TensorBoard", "Diagnostic Plots"])
 with tab1:
     st.subheader("TensorBoard Visualization")
     
+    # Get the proper TensorBoard URL based on environment
+    tensorboard_url = get_tensorboard_url()
+    
     # Check if TensorBoard is running
     if is_port_in_use(TENSORBOARD_PORT):
-        # Create the iframe for embedded TensorBoard
+        # Display the actual URL being used (helpful for debugging)
+        st.info(f"TensorBoard URL: {tensorboard_url}")
+        
+        # Create the iframe for embedded TensorBoard with auto-refresh
         tensorboard_iframe = f"""
         <iframe 
-            src="http://localhost:{TENSORBOARD_PORT}"
+            src="{tensorboard_url}?autorefresh=1&refresh=1"
             width="100%" 
             height="800px" 
             style="border:none;border-radius:5px;"
@@ -275,14 +355,34 @@ with tab1:
         </iframe>
         """
         
-        # Add a direct link first
-        st.markdown(f"**[Open TensorBoard in new tab](http://localhost:{TENSORBOARD_PORT})**")
+        # Add direct links with different refresh options
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**[Open TensorBoard in new tab]({tensorboard_url})**")
+        with col2:
+            st.markdown(f"**[Open with auto-refresh]({tensorboard_url}?autorefresh=1)**")
         
-        # Then embed the TensorBoard UI
+        # Add refresh button that users can click manually
+        if st.button("Refresh TensorBoard View"):
+            st.experimental_rerun()
+        
+        # Embed the TensorBoard UI
         html(tensorboard_iframe, height=800)
+        
+        # Add instructions
+        st.markdown("""
+        ### Tips for Real-time Monitoring
+        
+        If charts aren't updating automatically:
+        1. Click the refresh button in TensorBoard (↻ in top right)
+        2. Enable auto-refresh using the toggle in TensorBoard settings
+        3. Open TensorBoard in a separate window with the auto-refresh link above
+        4. Use the 'Refresh TensorBoard View' button to reload the entire frame
+        """)
     else:
         st.warning("TensorBoard is not running. Please restart the app or run TensorBoard manually.")
-        st.code(f"tensorboard --logdir={TENSORBOARD_LOGDIR} --port={TENSORBOARD_PORT}", language="bash")
+        st.code(f"tensorboard --logdir={TENSORBOARD_LOGDIR} --port={TENSORBOARD_PORT} --bind_all", language="bash")
+        st.markdown("Run this command in your terminal to start TensorBoard manually.")
 
 with tab2:
     if st.session_state.results:
@@ -347,4 +447,5 @@ with tab2:
 # Footer
 st.sidebar.markdown("---")
 st.sidebar.markdown("TensorBoard Direct Access:")
-st.sidebar.markdown(f"[Open TensorBoard](http://localhost:{TENSORBOARD_PORT})")
+tensorboard_url = get_tensorboard_url()
+st.sidebar.markdown(f"[Open TensorBoard]({tensorboard_url})")
