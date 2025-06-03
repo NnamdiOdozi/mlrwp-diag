@@ -179,6 +179,7 @@ figures/
 mlruns/
 mlflow-runs/
 outputs/
+logs/
 
 # Windows paths (shouldn't be on Linux anyway)
 "C:\\*"
