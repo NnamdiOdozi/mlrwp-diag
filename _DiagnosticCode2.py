@@ -18,7 +18,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error
 
-# NOTE: Removed SummaryWriter/TensorBoard imports and usage
+# Restore TensorBoard imports
+from torch.utils.tensorboard import SummaryWriter
 
 # Import custom classes from _DiagnosticClasses
 from _DiagnosticClasses import (
@@ -28,7 +29,7 @@ from _DiagnosticClasses import (
 )
 
 
-def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropout, run_name="diagnostic_run"):
+def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropout, run_name="diagnostic_run", log_dir="logs"):
     """
     Train the diagnostic model and generate diagnostic plots.
 
@@ -40,17 +41,22 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
       n_hidden  : Number of hidden nodes.
       batchnorm : Boolean indicating if batch normalization is used.
       dropout   : Dropout rate (float).
-      run_name  : Name of the run (for MLflow logging).
+      run_name  : Name of the run.
+      log_dir   : Directory to store TensorBoard logs.
 
     Returns:
       A dictionary with:
          "mse"      : Mean Squared Error computed on the training set.
          "figures"  : A list of tuples (figure_name, matplotlib.figure.Figure).
+         "log_dir"  : Path to the TensorBoard log directory.
     """
     figures = []
 
     try:
-        # --- Removed TensorBoard Setup ---
+        # --- TensorBoard Setup ---
+        log_path = os.path.join(log_dir, run_name)
+        os.makedirs(log_path, exist_ok=True)
+        writer = SummaryWriter(log_dir=log_path)
 
         # --- Configuration ---
         list_of_features = [
@@ -89,7 +95,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
                     dropout=dropout_rate,
                     init_bias=init_bias,
                     verbose=1,
-                    # Removed writer argument
+                    writer=writer  # Pass TensorBoard writer
                 ))
             ]
         )
@@ -104,7 +110,8 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         y_train_pred = model_NN.predict(X_train)
         mse_train = mean_squared_error(y_train.values.ravel(), y_train_pred.ravel())
         print(f"MSE on Training Data: {mse_train:.4f}")
-        # Removed final MSE TensorBoard logging
+        # Add final MSE to TensorBoard
+        writer.add_scalar("Final MSE", mse_train, 0)
 
         # --- Generate Predictions for Plots ---
         print("Calculating predictions on all data for plotting...")
@@ -115,12 +122,11 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
 
 
         # --- Generate Diagnostic Plots ---
-
         def make_model_subplots(plot_dat, target_col):
             # (Plotting code remains the same)
             fig, axes = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(15, 15))
             fig.suptitle("Model Performance by Period (Mean Claim Size)", fontsize=16)
-            # ... (rest of plotting code) ...
+            
             # Train, Occ
             (plot_dat
                 .loc[lambda df: df.train_ind == 1]
@@ -128,6 +134,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
                 .agg(actual_mean=(target_col, "mean"), pred_mean=("pred_claims", "mean"))
             ).rename(columns={"actual_mean": target_col}).plot(ax=axes[0,0], logy=True, title="Train, Occurrence")
             axes[0,0].legend([target_col, "Prediction"])
+            
             # Train, Dev
             (plot_dat
                 .loc[lambda df: df.train_ind == 1]
@@ -135,6 +142,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
                 .agg(actual_mean=(target_col, "mean"), pred_mean=("pred_claims", "mean"))
             ).rename(columns={"actual_mean": target_col}).plot(ax=axes[0,1], logy=True, title="Train, Development")
             axes[0,1].legend([target_col, "Prediction"])
+            
             # Test, Occ
             (plot_dat
                 .loc[lambda df: df.train_ind == 0]
@@ -142,6 +150,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
                 .agg(actual_mean=(target_col, "mean"), pred_mean=("pred_claims", "mean"))
             ).rename(columns={"actual_mean": target_col}).plot(ax=axes[1,0], logy=True, title="Test, Occurrence")
             axes[1,0].legend([target_col, "Prediction"])
+            
             # Test, Dev
             (plot_dat
                 .loc[lambda df: df.train_ind == 0]
@@ -149,12 +158,14 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
                 .agg(actual_mean=(target_col, "mean"), pred_mean=("pred_claims", "mean"))
             ).rename(columns={"actual_mean": target_col}).plot(ax=axes[1,1], logy=True, title="Test, Development")
             axes[1,1].legend([target_col, "Prediction"])
+            
             # All, Occ
             (plot_dat
                 .groupby(["occurrence_time"])
                 .agg(actual_mean=(target_col, "mean"), pred_mean=("pred_claims", "mean"))
             ).rename(columns={"actual_mean": target_col}).plot(ax=axes[2,0], logy=True, title="All, Occurrence")
             axes[2,0].legend([target_col, "Prediction"])
+            
             # All, Dev
             (plot_dat
                 .groupby(["development_period"])
@@ -168,7 +179,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         print("Generating Development/Occurrence Subplots...")
         fig_dev_occ = make_model_subplots(dat, output_field)
         figures.append(("Development and Occurrence Performance", fig_dev_occ))
-        # Removed writer.add_figure call
+        writer.add_figure("Development and Occurrence Performance", fig_dev_occ)
         plt.close(fig_dev_occ)
 
         # Prepare data subsets
@@ -187,7 +198,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         ax.set_xlabel('Actual Claim Size', fontsize=12); ax.set_ylabel('Predicted Claim Size', fontsize=12)
         ax.set_title('Actual vs. Predicted - Train Data (All Records)'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
         figures.append(("AvsE Train All", fig_avse_train_all))
-        # Removed writer.add_figure call
+        writer.add_figure("AvsE Train All", fig_avse_train_all)
         plt.close(fig_avse_train_all)
 
         # AvsE - Test data - All records
@@ -199,7 +210,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         ax.set_xlabel('Actual Claim Size', fontsize=12); ax.set_ylabel('Predicted Claim Size', fontsize=12)
         ax.set_title('Actual vs. Predicted - Test Data (All Records)'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
         figures.append(("AvsE Test All", fig_avse_test_all))
-        # Removed writer.add_figure call
+        writer.add_figure("AvsE Test All", fig_avse_test_all)
         plt.close(fig_avse_test_all)
 
         # Logged AvsE - Train data - All records
@@ -211,7 +222,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         ax.set_xlabel('ln(Actual Claim Size + eps)', fontsize=12); ax.set_ylabel('ln(Predicted Claim Size + eps)', fontsize=12)
         ax.set_title('Logged Actual vs. Predicted - Train Data'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
         figures.append(("Logged AvsE Train All", fig_avse_train_log))
-        # Removed writer.add_figure call
+        writer.add_figure("Logged AvsE Train All", fig_avse_train_log)
         plt.close(fig_avse_train_log)
 
         # Logged AvsE - Test data - All records
@@ -223,7 +234,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         ax.set_xlabel('ln(Actual Claim Size + eps)', fontsize=12); ax.set_ylabel('ln(Predicted Claim Size + eps)', fontsize=12)
         ax.set_title('Logged Actual vs. Predicted - Test Data'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
         figures.append(("Logged AvsE Test All", fig_avse_test_log))
-        # Removed writer.add_figure call
+        writer.add_figure("Logged AvsE Test All", fig_avse_test_log)
         plt.close(fig_avse_test_log)
 
         # Ultimates
@@ -239,7 +250,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         ax.set_xlabel('Actual Ultimate Claim Size', fontsize=12); ax.set_ylabel('Predicted Ultimate Claim Size', fontsize=12)
         ax.set_title('Actual vs. Predicted - Train Data (Ultimates Only)'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
         figures.append(("AvsE Train Ultimates", fig_avse_train_ult))
-        # Removed writer.add_figure call
+        writer.add_figure("AvsE Train Ultimates", fig_avse_train_ult)
         plt.close(fig_avse_train_ult)
 
         # AvsE - Test data - Ultimates only
@@ -251,7 +262,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         ax.set_xlabel('Actual Ultimate Claim Size', fontsize=12); ax.set_ylabel('Predicted Ultimate Claim Size', fontsize=12)
         ax.set_title('Actual vs. Predicted - Test Data (Ultimates Only)'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
         figures.append(("AvsE Test Ultimates", fig_avse_test_ult))
-        # Removed writer.add_figure call
+        writer.add_figure("AvsE Test Ultimates", fig_avse_test_ult)
         plt.close(fig_avse_test_ult)
 
         # --- QQ Plots (Calibration) ---
@@ -279,7 +290,7 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
             ax.set_xlabel(f'Mean Actual ({n_quantiles}-Quantile)', fontsize=12); ax.set_ylabel(f'Mean Predicted ({n_quantiles}-Quantile)', fontsize=12)
             ax.set_title(f'Calibration Plot (QQ) - Train Data ({n_quantiles}-Quantiles)'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
             figures.append(("QQ Plot Train", fig_qq_train))
-            # Removed writer.add_figure call
+            writer.add_figure("QQ Plot Train", fig_qq_train)
             plt.close(fig_qq_train)
 
             # Test QQ plot
@@ -292,25 +303,26 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
             ax.set_xlabel(f'Mean Actual ({n_quantiles}-Quantile)', fontsize=12); ax.set_ylabel(f'Mean Predicted ({n_quantiles}-Quantile)', fontsize=12)
             ax.set_title(f'Calibration Plot (QQ) - Test Data ({n_quantiles}-Quantiles)'); ax.legend(); ax.grid(True, linestyle='--', alpha=0.6)
             figures.append(("QQ Plot Test", fig_qq_test))
-            # Removed writer.add_figure call
+            writer.add_figure("QQ Plot Test", fig_qq_test)
             plt.close(fig_qq_test)
         else:
             print("Skipping QQ plots due to issues creating quantiles.")
-
-        # --- Commented out Tableau specific code ---
-        # ... (remains commented) ...
 
         print("Diagnostic generation complete.")
 
     except Exception as e:
          print(f"An error occurred in run_diagnostics: {e}")
          raise e
-    # Removed finally block with writer.close()
+    finally:
+        # Close the TensorBoard writer
+        if 'writer' in locals() and writer is not None:
+            writer.close()
 
     # --- Return Results ---
     results = {
         "mse": mse_train if 'mse_train' in locals() else np.nan,
         "figures": figures,
+        "log_dir": log_path if 'log_path' in locals() else None
     }
     plt.close('all')
     return results

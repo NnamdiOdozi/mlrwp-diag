@@ -8,12 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
 from sklearn.utils.validation import check_is_fitted, check_array, check_X_y
 
-#from torch.utils.tensorboard import SummaryWriter
-
-# Initialize TensorBoard writer
-#writer = SummaryWriter()
-
-
+from torch.utils.tensorboard import SummaryWriter
 
 class TabularNetRegressor(BaseEstimator, RegressorMixin):
     def __init__(
@@ -33,8 +28,9 @@ class TabularNetRegressor(BaseEstimator, RegressorMixin):
         dropout=0.0,
         clip_value=None,
         verbose=1,                
-        device="cpu", #if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu"),  # Use GPU if available, leave mps off until more stable
+        device="cpu", #if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu"),
         init_bias=None,
+        writer=None,  # Added TensorBoard writer parameter
         **kwargs
     ):
  
@@ -57,6 +53,7 @@ class TabularNetRegressor(BaseEstimator, RegressorMixin):
         self.print_loss_every_iter = max(1, int(max_iter / 10))
         self.verbose = verbose
         self.clip_value = clip_value
+        self.writer = writer  # Store TensorBoard writer
         self.kwargs = kwargs
 
         
@@ -139,19 +136,21 @@ class TabularNetRegressor(BaseEstimator, RegressorMixin):
             self.module_.train()
             y_pred = self.module_(X_tensor_batch)  #  Apply current model
 
-    #Tensorboard
-            expected=y_pred.detach().numpy()
-            ln_expected=np.log(expected)
-            ln_actual=np.log(y_tensor_batch)
+            # TensorBoard logging
+            expected = y_pred.detach().cpu().numpy()
+            ln_expected = np.log(expected)
+            ln_actual = np.log(y_tensor_batch.cpu().numpy())
 
             loss = loss_fn(y_pred, y_tensor_batch) #  What is the loss on it?
 
-            #Loss graph
-            #writer.add_scalar("Loss", loss, epoch)
-
-            #Learning rate graph
-            current_lr = scheduler.get_last_lr()[0]  # Assuming one parameter group
-            #writer.add_scalar('Learning Rate', current_lr, epoch)
+            # TensorBoard logging
+            if self.writer:
+                # Loss graph
+                self.writer.add_scalar("Loss", loss, epoch)
+                
+                # Learning rate graph
+                current_lr = scheduler.get_last_lr()[0]  # Assuming one parameter group
+                self.writer.add_scalar('Learning Rate', current_lr, epoch)
             
             if self.l1_penalty > 0.0:        #  Lasso penalty
                 loss += self.l1_penalty * sum(
@@ -195,25 +194,26 @@ class TabularNetRegressor(BaseEstimator, RegressorMixin):
                 
                 print("Train RMSE: ", rmse.data.tolist(), " Train Loss: ", loss.data.tolist(), " Epoch: ", epoch)
 
-    #Tensorboard
-                #writer.add_scalar("RMSE", rmse, epoch)
-                #writer.add_histogram('Expected', expected, epoch)
+                # TensorBoard logging
+                if self.writer:
+                    self.writer.add_scalar("RMSE", rmse, epoch)
+                    self.writer.add_histogram('Expected', expected, epoch)
 
-                fig, ax = plt.subplots()
-                ax.scatter(y_tensor_batch, expected)
-                ax.plot([0,2500000],[0,2500000])
-                ax.set_xlabel('Actual', fontsize=15)
-                ax.set_ylabel('Expected', fontsize=15)
-                ax.set_title('A vs E')               
-                #writer.add_figure('AvsE', fig, epoch)
+                    fig, ax = plt.subplots()
+                    ax.scatter(y_tensor_batch.cpu().numpy(), expected)
+                    ax.plot([0,2500000],[0,2500000])
+                    ax.set_xlabel('Actual', fontsize=15)
+                    ax.set_ylabel('Expected', fontsize=15)
+                    ax.set_title('A vs E')               
+                    self.writer.add_figure('AvsE', fig, epoch)
 
-                fig, ax = plt.subplots()                
-                ax.scatter(ln_actual, ln_expected)
-                ax.plot([0,16],[0,16])
-                ax.set_xlabel('Actual', fontsize=15)
-                ax.set_ylabel('Expected', fontsize=15)
-                ax.set_title('A vs E Logged')               
-                #writer.add_figure('AvsE Logged', fig, epoch)
+                    fig, ax = plt.subplots()                
+                    ax.scatter(ln_actual, ln_expected)
+                    ax.plot([0,16],[0,16])
+                    ax.set_xlabel('Actual', fontsize=15)
+                    ax.set_ylabel('Expected', fontsize=15)
+                    ax.set_title('A vs E Logged')               
+                    self.writer.add_figure('AvsE Logged', fig, epoch)
                
             if (self.batch_function is not None) & (epoch % self.rebatch_every_iter == 0):
                 print(f"refreshing batch on epoch {epoch}")
@@ -291,6 +291,9 @@ class LogLinkForwardNet(nn.Module):
         nn.init.zeros_(self.linear.weight)                 # Initialise to zero
         # nn.init.constant_(self.linear.bias, init_bias)        
         self.linear.bias.data = torch.tensor(init_bias)
+        
+        # Set default point_estimates attribute
+        self.point_estimates = False
 
     # The forward function defines how you get y from X.
     def forward(self, x):
