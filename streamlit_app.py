@@ -364,7 +364,7 @@ with tab1:
         
         # Add refresh button that users can click manually
         if st.button("Refresh TensorBoard View"):
-            st.experimental_rerun()
+            st.rerun()
         
         # Embed the TensorBoard UI
         html(tensorboard_iframe, height=800)
