@@ -165,6 +165,7 @@ cython_debug/
 #.idea/
 
 # Application logs
+app_log/
 app_log_*.txt
 *.log
 nohup.out
