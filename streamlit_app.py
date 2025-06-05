@@ -89,8 +89,12 @@ def get_server_address():
 # Function to get the TensorBoard URL
 def get_tensorboard_url():
     """Get the appropriate TensorBoard URL based on environment"""
-    server_address = get_server_address()
-    return f"http://{server_address}:{TENSORBOARD_PORT}"
+    # Check if running locally
+    if is_running_locally():
+        return "http://localhost:6006"
+    else:
+        # When running on the server, use the proxied HTTPS URL
+        return "https://mlrwp-diag.uk-ba.net/tensorboard"
 
 # Function to check if TensorBoard is already running
 def find_tensorboard_process():
