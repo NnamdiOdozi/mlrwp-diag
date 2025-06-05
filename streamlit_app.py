@@ -19,10 +19,19 @@ from datetime import datetime
 import pytz
 from streamlit.components.v1 import html
 
+# Define the log directory and ensure it exists
+log_dir = 'app_log'
+os.makedirs(log_dir, exist_ok=True)
+
+# Create the full path to the log file
+log_filename = os.path.join(log_dir, f"app_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+
 # Setup basic logging
-log_filename = f"app_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-logging.basicConfig(filename=log_filename, level=logging.INFO, 
-                   format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename=log_filename,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # Import diagnostics function
 import sys
