@@ -4,9 +4,14 @@ streamlit_app.py (Optimized TensorBoard Integration)
 Streamlit front-end for the Machine Learning in Reserving - Diagnostic App.
 """
 
+
+import os
+os.environ['STREAMLIT_SERVER_WATCH_MODULES'] = 'false'
+os.environ['STREAMLIT_SERVER_WATCHERS_IGNORE_TORCH'] = 'true'
+
 import streamlit as st
 import pandas as pd
-import os
+#import os
 import traceback
 import time
 import numpy as np
