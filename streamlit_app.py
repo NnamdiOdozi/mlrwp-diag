@@ -24,6 +24,7 @@ from datetime import datetime
 import pytz
 from streamlit.components.v1 import html
 
+
 # Define the log directory and ensure it exists
 log_dir = 'app_log'
 os.makedirs(log_dir, exist_ok=True)
@@ -467,3 +468,9 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("TensorBoard Direct Access:")
 tensorboard_url = get_tensorboard_url()
 st.sidebar.markdown(f"[Open TensorBoard]({tensorboard_url})")
+
+# This clears the cache for the next user but preserves the current view
+if st.session_state.results:
+    if st.sidebar.button("Release Memory (Training Complete)"):
+        st.cache_data.clear()  # Clears all data caches
+        st.sidebar.success("Memory released for other users!")
