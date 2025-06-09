@@ -23,6 +23,7 @@ import logging
 from datetime import datetime
 import pytz
 from streamlit.components.v1 import html
+import sys
 
 
 # Define the log directory and ensure it exists
@@ -505,3 +506,4 @@ if st.session_state.results:
             st.sidebar.warning(f"Note: Some advanced memory release failed: {str(e)}")
         
         st.sidebar.success(f"Memory released! Current usage: {psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.1f} MB")
+
