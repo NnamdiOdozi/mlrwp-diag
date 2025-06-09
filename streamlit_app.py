@@ -472,5 +472,37 @@ st.sidebar.markdown(f"[Open TensorBoard]({tensorboard_url})")
 # This clears the cache for the next user but preserves the current view
 if st.session_state.results:
     if st.sidebar.button("Release Memory (Training Complete)"):
-        st.cache_data.clear()  # Clears all data caches
-        st.sidebar.success("Memory released for other users!")
+    # Clear Streamlit cache
+        st.cache_data.clear()
+        
+        # Clear session state variables that might hold large objects
+        for key in list(st.session_state.keys()):
+            if key.startswith('model_') or key == 'results' or key == 'current_run_figures':
+                del st.session_state[key]
+        
+        # Aggressive garbage collection
+        import gc
+        import os
+        import psutil
+        
+        # Run garbage collection multiple times
+        for _ in range(3):
+            gc.collect()
+        
+        # Force memory release to OS (Linux-specific)
+        try:
+            # Get the current process
+            process = psutil.Process(os.getpid())
+            
+            # For Ubuntu 24.04, use malloc_trim from libc
+            import ctypes
+            libc = ctypes.CDLL('libc.so.6')
+            libc.malloc_trim(0)
+            
+            # Additional Linux-specific memory pressure technique
+            with open('/proc/sys/vm/drop_caches', 'w') as f:
+                f.write('1')
+        except Exception as e:
+            st.sidebar.warning(f"Note: Some advanced memory release failed: {str(e)}")
+        
+        st.sidebar.success(f"Memory released! Current usage: {psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.1f} MB")
