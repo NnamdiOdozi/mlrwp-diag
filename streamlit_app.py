@@ -482,8 +482,7 @@ if st.session_state.results:
         
         # Aggressive garbage collection
         import gc
-        import os
-        import psutil
+        
         
         # Run garbage collection multiple times
         for _ in range(3):
