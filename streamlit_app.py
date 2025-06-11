@@ -310,7 +310,7 @@ if st.button("Train Model and Generate Diagnostics", disabled=(data is None), ty
                 status.write(f"- **Initial Bias**: {init_bias}")
                 status.write(f"- **Batch Normalization**: {'Enabled' if batchnorm else 'Disabled'}")
                 status.write(f"- **Dropout Rate**: {dropout_rate}")
-                status.write(f"- **Final MSE**: {results.get('mse', 'N/A'):.2f}")
+                status.write(f"- **Final MSE**: {results.get('mse', 'N/A'):,.2f}")
 
                 # Store results
                 st.session_state.results = results
@@ -474,6 +474,7 @@ st.sidebar.markdown(f"[Open TensorBoard]({tensorboard_url})")
 if st.session_state.results:
     if st.sidebar.button("Release Memory (Training Complete)"):
     # Clear Streamlit cache
+        previous_mem = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
         st.cache_data.clear()
         
         # Clear session state variables that might hold large objects
@@ -505,5 +506,5 @@ if st.session_state.results:
         except Exception as e:
             st.sidebar.warning(f"Note: Some advanced memory release failed: {str(e)}")
         
-        st.sidebar.success(f"Memory released! Current usage: {psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.1f} MB")
+        st.sidebar.success(f"Memory released! Current usage: {psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.1f} MB, down from {previous_mem:.1f} MB")
 
