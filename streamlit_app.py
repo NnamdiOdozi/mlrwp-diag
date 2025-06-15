@@ -204,18 +204,18 @@ authenticator = Authenticate(
 authenticator.check_authentification()
 
 # Show login/logout
-if not st.session_state['connected']:
+if not st.session_state.get('connected', False):
+    # Show ONLY login page, hide all app content
+    st.title("Please Sign In")
     authenticator.login()
-else:
-    # Your authenticated content here
-    st.write(f"Welcome {st.session_state['name']}!")
-    st.write(f"Email: {st.session_state['email']}")
-    
-    # Add logout button
-    authenticator.logout()
-    
-    # Your main app content goes here
-    st.write("Your authenticated app content...")
+    st.stop()  # ← This prevents any more code from running
+
+# App content ONLY shows after this point (when authenticated)
+st.sidebar.success(f"Welcome {st.session_state['name']}!")
+authenticator.logout()
+  
+# Your main app content goes here
+#st.write("Your authenticated app content...")
 
 # Cached data loading
 @st.cache_data
