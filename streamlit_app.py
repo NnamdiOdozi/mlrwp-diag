@@ -185,7 +185,7 @@ from streamlit_google_auth import Authenticate
 # Initialize the authenticator
 authenticator = Authenticate(
     secret_credentials_path='.streamlit/secrets.toml', 
-    cookie_name='cookie_secret',
+    cookie_name='mlrwp-diag_auth_session',
     redirect_uri="https://mlrwp-diag.uk-ba.net/oauth2/callback",
     cookie_secret=cookie_secret  
 )
