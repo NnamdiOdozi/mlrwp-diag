@@ -184,6 +184,21 @@ from streamlit_google_auth import Authenticate
 
 st.set_page_config(layout="wide", page_title="ML Reserving Diagnostic App")
 
+# ADD THE CSS HERE - right after page config
+st.markdown("""
+<style>
+/* Force Google button to front */
+button[kind="primary"] {
+    z-index: 999999 !important;
+    position: relative !important;
+}
+div[data-testid="stButton"] {
+    z-index: 999999 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # Add this right after your imports, before the authenticator:
 if 'connected' not in st.session_state:
     st.session_state.connected = False
