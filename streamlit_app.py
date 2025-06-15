@@ -197,11 +197,18 @@ authenticator = Authenticate(
     secret_credentials_path='.streamlit/google_credentials.json', 
     cookie_name='mlrwp-diag_auth_session',
     redirect_uri="https://mlrwp-diag.uk-ba.net",
-    cookie_key=cookie_secret  
+    cookie_key=cookie_secret,
+    cookie_expiry_days=30  # Add explicit expiry  
 )
 
 # Check authentication
 authenticator.check_authentification()
+
+# Add this right after authenticator.check_authentification()
+st.write("DEBUG INFO:")
+st.write(f"Connected: {st.session_state.get('connected', 'NOT SET')}")
+st.write(f"Name: {st.session_state.get('name', 'NOT SET')}")
+st.write(f"All session state keys: {list(st.session_state.keys())}")
 
 # Show login/logout
 if not st.session_state.get('connected', False):
