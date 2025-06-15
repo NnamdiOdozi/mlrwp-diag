@@ -171,6 +171,14 @@ def start_tensorboard():
         logging.error(f"Error starting TensorBoard: {e}")
         return False
 
+# I got this login script from streamlit:https://docs.streamlit.io/develop/concepts/connections/authentication
+if not st.user.is_logged_in:
+    st.button("Log in with Google", on_click=st.login)
+    st.stop()
+
+st.button("Log out", on_click=st.logout)
+st.markdown(f"Welcome! {st.user.name}")
+
 # Cached data loading
 @st.cache_data
 def load_and_cache_data():

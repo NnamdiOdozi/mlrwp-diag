@@ -325,4 +325,5 @@ def run_diagnostics(dat, nn_iter, max_lr, init_bias, n_hidden, batchnorm, dropou
         "log_dir": log_path if 'log_path' in locals() else None
     }
     plt.close('all')
+    
     return results
