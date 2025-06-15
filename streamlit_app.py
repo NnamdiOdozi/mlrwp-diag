@@ -26,6 +26,14 @@ from streamlit.components.v1 import html
 import sys
 
 
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# Get API keys from environment variables
+cookie_secret = os.environ.get("cookie_secret")
+
 # Define the log directory and ensure it exists
 log_dir = 'app_log'
 os.makedirs(log_dir, exist_ok=True)
@@ -176,7 +184,10 @@ from streamlit_google_auth import Authenticate
 
 # Initialize the authenticator
 authenticator = Authenticate(
-    secret_credentials_path='.streamlit/secrets.toml'
+    secret_credentials_path='.streamlit/secrets.toml', 
+    cookie_name='cookie_secret',
+    redirect_uri="https://mlrwp-diag.uk-ba.net/oauth2/callback",
+    cookie_secret=cookie_secret  
 )
 
 # Check authentication
