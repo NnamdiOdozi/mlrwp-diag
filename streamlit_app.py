@@ -188,7 +188,7 @@ st.set_page_config(layout="wide", page_title="ML Reserving Diagnostic App")
 authenticator = Authenticate(
     secret_credentials_path='.streamlit/google_credentials.json', 
     cookie_name='mlrwp-diag_auth_session',
-    redirect_uri="https://mlrwp-diag.uk-ba.net/oauth2/callback",
+    redirect_uri="https://mlrwp-diag.uk-ba.net",
     cookie_key=cookie_secret  
 )
 
@@ -302,11 +302,11 @@ elif data is None:
     st.sidebar.warning("Load data to enable model run.")
 
 # Auto-refresh during active training
-if st.session_state.training_active:
-    st.markdown("""
-    <meta http-equiv="refresh" content="5">
-    """, unsafe_allow_html=True)
-    st.info("Auto-refresh is active during training (every 5 seconds)")
+# if st.session_state.training_active:
+#     st.markdown("""
+#     <meta http-equiv="refresh" content="5">
+#     """, unsafe_allow_html=True)
+#     st.info("Auto-refresh is active during training (every 5 seconds)")
 
 # Run model button
 if st.button("Train Model and Generate Diagnostics", disabled=(data is None), type="primary"):
