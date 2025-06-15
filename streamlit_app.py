@@ -184,6 +184,14 @@ from streamlit_google_auth import Authenticate
 
 st.set_page_config(layout="wide", page_title="ML Reserving Diagnostic App")
 
+# Add this right after your imports, before the authenticator:
+if 'connected' not in st.session_state:
+    st.session_state.connected = False
+if 'name' not in st.session_state:
+    st.session_state.name = ''
+if 'email' not in st.session_state:
+    st.session_state.email = ''
+
 # Initialize the authenticator
 authenticator = Authenticate(
     secret_credentials_path='.streamlit/google_credentials.json', 
