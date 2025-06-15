@@ -182,6 +182,8 @@ def start_tensorboard():
 # This code block is to carry out authentication
 from streamlit_google_auth import Authenticate
 
+st.set_page_config(layout="wide", page_title="ML Reserving Diagnostic App")
+
 # Initialize the authenticator
 authenticator = Authenticate(
     secret_credentials_path='.streamlit/google_credentials.json', 
@@ -248,7 +250,7 @@ if 'tensorboard_started' not in st.session_state:
         logging.warning("TensorBoard could not be started automatically")
 
 # Streamlit UI Setup
-st.set_page_config(layout="wide", page_title="ML Reserving Diagnostic App")
+
 st.title("Machine Learning in Reserving - Diagnostic App")
 st.write(f"Local time: {get_formatted_local_time()}")
 
