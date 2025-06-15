@@ -171,13 +171,30 @@ def start_tensorboard():
         logging.error(f"Error starting TensorBoard: {e}")
         return False
 
-# I got this login script from streamlit:https://docs.streamlit.io/develop/concepts/connections/authentication
-if not st.user.is_logged_in:
-    st.button("Log in with Google", on_click=st.login)
-    st.stop()
+# This code block is to carry out authentication
+from streamlit_google_auth import Authenticate
 
-st.button("Log out", on_click=st.logout)
-st.markdown(f"Welcome! {st.user.name}")
+# Initialize the authenticator
+authenticator = Authenticate(
+    secret_credentials_path='.streamlit/secrets.toml'
+)
+
+# Check authentication
+authenticator.check_authentification()
+
+# Show login/logout
+if not st.session_state['connected']:
+    authenticator.login()
+else:
+    # Your authenticated content here
+    st.write(f"Welcome {st.session_state['name']}!")
+    st.write(f"Email: {st.session_state['email']}")
+    
+    # Add logout button
+    authenticator.logout()
+    
+    # Your main app content goes here
+    st.write("Your authenticated app content...")
 
 # Cached data loading
 @st.cache_data
