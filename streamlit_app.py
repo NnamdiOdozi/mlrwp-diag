@@ -189,7 +189,7 @@ st.markdown("""
 <style>
 /* Force Google button to front */
 button[kind="primary"] {
-    z-index: 999999 !important;
+    z-index: 999999 !important; 
     position: relative !important;
 }
 div[data-testid="stButton"] {
@@ -199,42 +199,42 @@ div[data-testid="stButton"] {
 """, unsafe_allow_html=True)
 
 
-# Add this right after your imports, before the authenticator:
-if 'connected' not in st.session_state:
-    st.session_state.connected = False
-if 'name' not in st.session_state:
-    st.session_state.name = ''
-if 'email' not in st.session_state:
-    st.session_state.email = ''
+# # Add this right after your imports, before the authenticator:
+# if 'connected' not in st.session_state:
+#     st.session_state.connected = False
+# if 'name' not in st.session_state:
+#     st.session_state.name = ''
+# if 'email' not in st.session_state:
+#     st.session_state.email = ''
 
-# Initialize the authenticator
-authenticator = Authenticate(
-    secret_credentials_path='.streamlit/google_credentials.json', 
-    cookie_name='mlrwp-diag_auth_session',
-    redirect_uri="https://mlrwp-diag.uk-ba.net",
-    cookie_key=cookie_secret,
-    cookie_expiry_days=30  # Add explicit expiry  
-)
+# # Initialize the authenticator
+# authenticator = Authenticate(
+#     secret_credentials_path='.streamlit/google_credentials.json', 
+#     cookie_name='mlrwp-diag_auth_session',
+#     redirect_uri="https://mlrwp-diag.uk-ba.net",
+#     cookie_key=cookie_secret,
+#     cookie_expiry_days=30  # Add explicit expiry  
+# )
 
-# Check authentication
-authenticator.check_authentification()
+# # Check authentication
+# authenticator.check_authentification()
 
-# Add this right after authenticator.check_authentification()
-st.write("DEBUG INFO:")
-st.write(f"Connected: {st.session_state.get('connected', 'NOT SET')}")
-st.write(f"Name: {st.session_state.get('name', 'NOT SET')}")
-st.write(f"All session state keys: {list(st.session_state.keys())}")
+# # Add this right after authenticator.check_authentification()
+# st.write("DEBUG INFO:")
+# st.write(f"Connected: {st.session_state.get('connected', 'NOT SET')}")
+# st.write(f"Name: {st.session_state.get('name', 'NOT SET')}")
+# st.write(f"All session state keys: {list(st.session_state.keys())}")
 
-# Show login/logout
-if not st.session_state.get('connected', False):
-    # Show ONLY login page, hide all app content
-    st.title("Please Sign In")
-    authenticator.login()
-    st.stop()  # ← This prevents any more code from running
+# # Show login/logout
+# if not st.session_state.get('connected', False):
+#     # Show ONLY login page, hide all app content
+#     st.title("Please Sign In")
+#     authenticator.login()
+#     st.stop()  # ← This prevents any more code from running
 
-# App content ONLY shows after this point (when authenticated)
-st.sidebar.success(f"Welcome {st.session_state['name']}!")
-authenticator.logout()
+# # App content ONLY shows after this point (when authenticated)
+# st.sidebar.success(f"Welcome {st.session_state['name']}!")
+# authenticator.logout()
   
 # Your main app content goes here
 #st.write("Your authenticated app content...")
